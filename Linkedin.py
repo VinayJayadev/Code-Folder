@@ -16,7 +16,7 @@ distance = "25"
 time_filter = "r2000"  # Recent jobs filter
 
 # Email configuration - ALL FROM ENVIRONMENT VARIABLES FOR SECURITY
-EMAIL_TO = os.getenv('EMAIL_TO', 'your-recipient@gmail.com')  # Set this in GitHub Secrets
+EMAIL_TO = os.getenv('EMAIL_TO', 'your-recipient@gmail.com')  # Can be comma-separated: email1@gmail.com,email2@gmail.com
 EMAIL_FROM = os.getenv('EMAIL_FROM', 'your-sender@gmail.com')  # Set this in GitHub Secrets  
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')  # MUST be set in GitHub Secrets
 SMTP_SERVER = "smtp.gmail.com"
@@ -289,9 +289,15 @@ def create_email_content(new_jobs):
     return html_content
 
 def send_email(new_jobs):
-    """Send email alert with new job listings"""
+    """Send email alert with new job listings to multiple recipients"""
     if not new_jobs:
         print("No new jobs to email.")
+        return False
+    
+    # Parse recipients
+    recipients = parse_email_recipients(EMAIL_TO)
+    if not recipients:
+        print("❌ No valid email recipients configured.")
         return False
     
     try:
@@ -304,19 +310,19 @@ def send_email(new_jobs):
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f"🚀 {len(new_jobs)} New Job Alert(s) - ML/AI/Data Science"
         msg['From'] = EMAIL_FROM
-        msg['To'] = EMAIL_TO
+        msg['To'] = ', '.join(recipients)  # Multiple recipients
         
         # Create HTML part
         html_part = MIMEText(html_content, 'html')
         msg.attach(html_part)
         
-        # Send email
+        # Send email to all recipients
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(EMAIL_FROM, EMAIL_PASSWORD)
-            server.send_message(msg)
+            server.send_message(msg, to_addrs=recipients)  # Send to multiple recipients
         
-        print(f"✅ Email sent successfully with {len(new_jobs)} new job(s)!")
+        print(f"✅ Email sent successfully to {len(recipients)} recipient(s) with {len(new_jobs)} new job(s)!")
         return True
         
     except Exception as e:
@@ -362,9 +368,29 @@ def test_email_connection():
         print(f"❌ Email connection error: {e}")
         return False
 
+def parse_email_recipients(email_string):
+    """Parse comma-separated email addresses"""
+    if not email_string:
+        return []
+    
+    # Split by comma and clean up whitespace
+    emails = [email.strip() for email in email_string.split(',')]
+    # Filter out empty strings
+    emails = [email for email in emails if email]
+    
+    print(f"📧 Parsed {len(emails)} recipient(s): {', '.join(emails)}")
+    return emails
+
 print("LinkedIn Job Scraper with Email Alerts Started")
 print(f"Searching for: {', '.join(keywords)}")
-print(f"Email alerts will be sent to: {EMAIL_TO}")
+
+# Parse and display email recipients
+recipients = parse_email_recipients(EMAIL_TO)
+if recipients:
+    print(f"Email alerts will be sent to: {', '.join(recipients)}")
+else:
+    print("⚠️  No email recipients configured!")
+
 print("⚠️  IMPORTANT: Configure EMAIL_PASSWORD with your Gmail App Password!")
 
 # Test email connection before starting
