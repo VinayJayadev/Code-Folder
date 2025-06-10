@@ -10,7 +10,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # Job search parameters
-keywords = ["Data Scientist", "ML Engineer", "Machine Learning Engineer", "AI Engineer", "Artificial Intelligence","Data Engineer"]
+keywords = ["Data Scientist", "ML Engineer", "Machine Learning Engineer", "AI Engineer", "Artificial Intelligence", "Data Engineer"]
 location = "101282230"  # Geographic ID
 distance = "25"
 time_filter = "r2000"  # Recent jobs filter
@@ -30,26 +30,77 @@ interval_seconds = 600
 
 def load_previous_jobs():
     """Load previously seen jobs from file"""
+    print(f"🔍 Loading previous jobs from {JOBS_HISTORY_FILE}...")
+    
     if os.path.exists(JOBS_HISTORY_FILE):
         try:
             with open(JOBS_HISTORY_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                previous_jobs = json.load(f)
+                print(f"✅ Loaded {len(previous_jobs)} previous job(s)")
+                return previous_jobs
         except Exception as e:
-            print(f"Error loading previous jobs: {e}")
+            print(f"❌ Error loading previous jobs: {e}")
             return []
-    return []
+    else:
+        print("📄 No previous jobs file found - this is the first run")
+        return []
 
 def save_previous_jobs(jobs):
     """Save current jobs to file for next comparison"""
     try:
+        print(f"💾 Saving {len(jobs)} job(s) to {JOBS_HISTORY_FILE}...")
+        
+        # Create a combined list: previous jobs + new jobs (to maintain history)
+        previous_jobs = []
+        if os.path.exists(JOBS_HISTORY_FILE):
+            try:
+                with open(JOBS_HISTORY_FILE, 'r', encoding='utf-8') as f:
+                    previous_jobs = json.load(f)
+            except:
+                previous_jobs = []
+        
+        # Combine and deduplicate
+        all_jobs = previous_jobs + jobs
+        seen_ids = set()
+        unique_jobs = []
+        
+        for job in all_jobs:
+            job_id = job.get('id', create_job_id(job))
+            if job_id not in seen_ids:
+                seen_ids.add(job_id)
+                unique_jobs.append(job)
+        
+        # Keep only recent jobs (last 1000 to prevent file from growing too large)
+        if len(unique_jobs) > 1000:
+            unique_jobs = unique_jobs[-1000:]
+        
         with open(JOBS_HISTORY_FILE, 'w', encoding='utf-8') as f:
-            json.dump(jobs, f, indent=2, ensure_ascii=False)
+            json.dump(unique_jobs, f, indent=2, ensure_ascii=False)
+        
+        print(f"✅ Successfully saved {len(unique_jobs)} unique job(s)")
+        
     except Exception as e:
-        print(f"Error saving jobs: {e}")
+        print(f"❌ Error saving jobs: {e}")
 
 def create_job_id(job):
     """Create a unique identifier for a job"""
-    return f"{job['title']}_{job['company']}_{job['location']}".replace(" ", "_").lower()
+    # Create more robust ID by cleaning and normalizing text
+    title = str(job.get('title', '')).lower().strip()
+    company = str(job.get('company', '')).lower().strip()
+    location = str(job.get('location', '')).lower().strip()
+    
+    # Remove special characters and normalize
+    import re
+    title = re.sub(r'[^a-z0-9\s]', '', title).replace(' ', '_')
+    company = re.sub(r'[^a-z0-9\s]', '', company).replace(' ', '_')
+    location = re.sub(r'[^a-z0-9\s]', '', location).replace(' ', '_')
+    
+    job_id = f"{title}_{company}_{location}"
+    
+    # Remove multiple underscores and clean up
+    job_id = re.sub(r'_+', '_', job_id).strip('_')
+    
+    return job_id
 
 def get_linkedin_jobs():
     """Fetch and parse LinkedIn job listings"""
@@ -231,13 +282,33 @@ def get_linkedin_jobs():
 
 def filter_new_jobs(current_jobs, previous_jobs):
     """Filter out jobs that were seen in previous searches"""
-    previous_job_ids = {job.get('id', create_job_id(job)) for job in previous_jobs}
+    print(f"\n🔍 Filtering jobs: {len(current_jobs)} current vs {len(previous_jobs)} previous")
+    
+    # Create set of previous job IDs for faster lookup
+    previous_job_ids = set()
+    for job in previous_jobs:
+        job_id = job.get('id', create_job_id(job))
+        previous_job_ids.add(job_id)
+    
+    print(f"📋 Previous job IDs: {len(previous_job_ids)} unique jobs in history")
+    
     new_jobs = []
+    duplicate_count = 0
     
     for job in current_jobs:
         job_id = job.get('id', create_job_id(job))
+        
         if job_id not in previous_job_ids:
             new_jobs.append(job)
+            print(f"✨ NEW: {job['title']} at {job['company']} (ID: {job_id[:50]}...)")
+        else:
+            duplicate_count += 1
+            print(f"🔄 DUPLICATE: {job['title']} at {job['company']} (already seen)")
+    
+    print(f"\n📊 Filter Results:")
+    print(f"   - New jobs: {len(new_jobs)}")
+    print(f"   - Duplicates filtered: {duplicate_count}")
+    print(f"   - Total current jobs: {len(current_jobs)}")
     
     return new_jobs
 
