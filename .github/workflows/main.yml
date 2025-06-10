@@ -19,6 +19,13 @@ jobs:
       with:
         python-version: '3.11'
         
+    - name: Download previous job history
+      uses: actions/download-artifact@v4
+      with:
+        name: job-history
+        path: ./
+      continue-on-error: true
+        
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -26,21 +33,15 @@ jobs:
         
     - name: Run LinkedIn job scraper
       env:
+        EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       run: |
-        cd "Code Folder"
         python Linkedin.py
         
     - name: Upload job history (persist between runs)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: job-history
-        path: Code Folder/previous_jobs.json
-        retention-days: 30
-        
-    - name: Download previous job history
-      uses: actions/download-artifact@v3
-      with:
-        name: job-history
-        path: Code Folder/
-      continue-on-error: true 
+        path: previous_jobs.json
+        retention-days: 30 
