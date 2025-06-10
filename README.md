@@ -46,9 +46,14 @@ Add these **3 secrets**:
 
 | Secret Name | Value | Example |
 |-------------|-------|---------|
-| `EMAIL_TO` | Recipient email | `your-email@gmail.com` |
+| `EMAIL_TO` | Recipient email(s) | `email1@gmail.com,email2@gmail.com` |
 | `EMAIL_FROM` | Your Gmail address | `your-gmail@gmail.com` |
 | `EMAIL_PASSWORD` | 16-char app password | `abcd efgh ijkl mnop` |
+
+**📧 Multiple Recipients**: You can send to multiple emails by separating them with commas:
+```
+EMAIL_TO = user1@gmail.com,user2@yahoo.com,user3@outlook.com
+```
 
 ### 3. **Enable Actions**
 1. Go to **Actions** tab
