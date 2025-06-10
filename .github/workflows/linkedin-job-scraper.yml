@@ -1,0 +1,46 @@
+name: LinkedIn Job Scraper
+
+on:
+  schedule:
+    # Runs every 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  scrape-jobs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run LinkedIn job scraper
+      env:
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      run: |
+        cd "Code Folder"
+        python Linkedin.py
+        
+    - name: Upload job history (persist between runs)
+      uses: actions/upload-artifact@v3
+      with:
+        name: job-history
+        path: Code Folder/previous_jobs.json
+        retention-days: 30
+        
+    - name: Download previous job history
+      uses: actions/download-artifact@v3
+      with:
+        name: job-history
+        path: Code Folder/
+      continue-on-error: true 
