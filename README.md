@@ -4,7 +4,7 @@ Automated LinkedIn job scraper that searches for ML/AI/Data Science positions an
 
 ## ✨ Features
 
-- **🔍 Smart Job Search**: Searches for Data Scientist, ML Engineer, AI Engineer, Software Engineer positions
+- **🔍 Smart Job Search**: Searches for Data Scientist, ML Engineer, AI Engineer positions
 - **📧 Email Alerts**: Sends beautiful HTML emails with new job listings
 - **🚫 No Duplicates**: Tracks previously seen jobs to avoid duplicate alerts
 - **☁️ Cloud Ready**: Runs automatically on GitHub Actions every 10 minutes
