@@ -3,7 +3,7 @@ name: LinkedIn Job Scraper
 on:
   schedule:
     # Runs every 10 minutes
-    - cron: '*/30 * * * *'
+    - cron: '*/10 * * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
@@ -25,6 +25,16 @@ jobs:
         name: job-history
         path: ./
       continue-on-error: true
+      
+    - name: Check if job history exists
+      run: |
+        if [ -f previous_jobs.json ]; then
+          echo "✅ Job history file found: $(wc -l < previous_jobs.json) lines"
+          echo "📄 File size: $(du -h previous_jobs.json)"
+        else
+          echo "📄 No previous job history found - this will be the first run"
+          echo "[]" > previous_jobs.json
+        fi
         
     - name: Install dependencies
       run: |
@@ -39,9 +49,19 @@ jobs:
       run: |
         python Linkedin.py
         
+    - name: Check job history after run
+      run: |
+        if [ -f previous_jobs.json ]; then
+          echo "✅ Job history after run: $(wc -l < previous_jobs.json) lines"
+          echo "📄 File size after run: $(du -h previous_jobs.json)"
+        else
+          echo "❌ No job history file created!"
+        fi
+        
     - name: Upload job history (persist between runs)
       uses: actions/upload-artifact@v4
       with:
         name: job-history
         path: previous_jobs.json
-        retention-days: 30 
+        retention-days: 30
+      if: always()  # Upload even if previous steps failed 
