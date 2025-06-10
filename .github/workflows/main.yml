@@ -3,7 +3,7 @@ name: LinkedIn Job Scraper
 on:
   schedule:
     # Runs every 10 minutes
-    - cron: '*30 * * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
