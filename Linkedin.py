@@ -10,7 +10,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # Job search parameters
-keywords = ["Data Scientist", "ML Engineer", "Machine Learning Engineer", "AI Engineer", "Artificial Intelligence", "Software Engineer", "Data Engineer"]
+keywords = ["Data Scientist", "ML Engineer", "Machine Learning Engineer", "AI Engineer", "Artificial Intelligence","Data Engineer"]
 location = "101282230"  # Geographic ID
 distance = "25"
 time_filter = "r2000"  # Recent jobs filter
